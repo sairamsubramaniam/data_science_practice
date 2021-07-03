@@ -284,7 +284,10 @@ def classify(feature_matrix, theta, theta_0):
     be considered a positive classification.
     """
     # Your code here
-    raise NotImplementedError
+    raw_preds = (feature_matrix @ theta.T) + theta_0
+    raw_preds[raw_preds > 1e-8] = 1.
+    raw_preds[raw_preds <= 1e-8] = -1.
+    return raw_preds
 
 
 def classifier_accuracy(
@@ -320,7 +323,21 @@ def classifier_accuracy(
     accuracy of the trained classifier on the validation data.
     """
     # Your code here
-    raise NotImplementedError
+    theta, theta_0 = classifier(feature_matrix=train_feature_matrix,
+                                labels=train_labels,
+                                **kwargs)
+
+    tr_preds = classify(feature_matrix=train_feature_matrix, 
+                     theta=theta, 
+                     theta_0=theta_0)
+    tr_acc = accuracy(preds=tr_preds, targets=train_labels)
+
+    val_preds = classify(feature_matrix=val_feature_matrix, 
+                     theta=theta, 
+                     theta_0=theta_0)
+    val_acc = accuracy(preds=val_preds, targets=val_labels)
+
+    return tr_acc, val_acc
 
 
 def extract_words(input_string):
@@ -345,10 +362,15 @@ def bag_of_words(texts):
     """
     # Your code here
     dictionary = {} # maps word to unique index
+
+    with open("stopwords.txt","r") as infl:
+        stopwords = infl.read()
+        stopwords = stopwords.split("\n")
+
     for text in texts:
         word_list = extract_words(text)
         for word in word_list:
-            if word not in dictionary:
+            if (word not in dictionary) and (word not in stopwords):
                 dictionary[word] = len(dictionary)
     return dictionary
 
@@ -372,7 +394,7 @@ def extract_bow_feature_vectors(reviews, dictionary):
         word_list = extract_words(text)
         for word in word_list:
             if word in dictionary:
-                feature_matrix[i, dictionary[word]] = 1
+                feature_matrix[i, dictionary[word]] = word_list.count(word)
     return feature_matrix
 
 
